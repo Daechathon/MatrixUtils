@@ -1,52 +1,67 @@
-import java.lang.reflect.Array;
-
+/**
+ * Created by Brandon Aldridge on 10/10/2019
+ * Matrix operations for numbers and regular expressions
+ * @param <E> Type of the contents of the matrix
+ */
 public class Matrix<E> {
 
-//    private final Class<? extends E> cls;
     private E[][] matrix;
 
-//    public Matrix(Class<E> cls, int x, int y){
-//        this.cls = cls;
-//        matrix = (E[][]) Array.newInstance(cls, x, y);
-//
-////        matrix = (E[][]) new Object[x][y];
-//    }
-
     public Matrix(int x, int y){
-
         matrix = (E[][]) new Object[x][y];
     }
 
-//    public Matrix(Class<E> cls, E[][] matrix){
-//        this.cls = cls;
-//        this.matrix = matrix;
-//    }
-
     public Matrix(E[][] matrix){
+
         this.matrix = matrix;
     }
-
-//    public Matrix(Class<E> cls, E singleMatrix){
-//        this.cls = cls;
-//        E[][] newMatrix = (E[][]) Array.newInstance(cls, 1, 1);
-//        newMatrix[0][0] = singleMatrix;
-//        this.matrix = newMatrix;
-//    }
 
     public Matrix(E singleValue){
         E[][] tempMatrix = (E[][]) new Object[1][1];
         tempMatrix[0][0] = singleValue;
+        matrix = tempMatrix;
     }
 
+    public E[][] getMatrix(){
+        return matrix;
+    }
+
+    public void setMatrix(E[][] matrix) {
+        this.matrix = matrix;
+    }
+
+    @Override
+    public boolean equals(Object o){
+
+        if(o == this)
+            return true;
+
+        if(!(o instanceof Matrix))
+            return false;
+
+        Matrix m = (Matrix) o;
+
+        if(m.matrix.length != this.matrix.length)
+            return false;
+
+        //compare field values
+        for(int x = 0; x < this.matrix.length; x++){
+            for(int y = 0; y < this.matrix[x].length; y++){
+
+                if(!this.matrix[x][y].equals(m.matrix[x][y]))
+                    return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * adds 2 matrices of a generic type
      * @param matrix1 first matrix to add
      * @param matrix2 second matrix to add
      * @return sum of the matrices
-     * @throws IllegalArgumentException one or more invalid matrix sizes
      */
-    public static <E> Matrix<E> add(Matrix<E> matrix1, Matrix<E> matrix2) throws IllegalArgumentException{
+    public static <E> Matrix<E> add(Matrix<E> matrix1, Matrix<E> matrix2){
 
         if(matrix1.matrix.length < 1 || matrix2.matrix.length < 1)
             throw new IllegalArgumentException("Matrix is of size zero!");
@@ -54,9 +69,9 @@ public class Matrix<E> {
                 matrix1.matrix[0].length != matrix2.matrix[0].length)
             throw new IllegalArgumentException("Matrix sizes do not match!");
 
-//        E[][] matrixSum = (E[][]) Array.newInstance(matrix1.cls, matrix1.matrix.length, matrix1.matrix[0].length);
         E[][] matrixSum = (E[][]) new Object[matrix1.matrix.length][matrix1.matrix[0].length];
 
+        //adds elements of the matrices
         for(int x = 0; x < matrix1.matrix.length; x++){
             for(int y = 0; y < matrix1.matrix[0].length; y++){
 
@@ -70,76 +85,93 @@ public class Matrix<E> {
 
 
     /**
-     * catches unimplemented types. Should never be called!
-     * @param e1 first generic
-     * @param e2 second generic
+     * calls the appropriate add() based on parameters
+     * throws IllegalArgumentException if unimplemented type is used
+     *
+     * @param e1 first value
+     * @param e2 second value
      * @param <E> the type :P
-     * @return null
+     * @return sum of parameters
      */
-    private static <E> E add(E e1, E e2){
-        return null;
+    public static <E> E add(E e1, E e2){
+
+        String foo = e1.getClass().getName();
+        if(foo.equals("java.lang.Integer"))
+            return (E) add((Integer) e1, (Integer) e2);
+        if(foo.equals("java.lang.Double"))
+            return (E) add((Double) e1, (Double) e2);
+        if(foo.equals("Matrix"))
+            return (E) add((Matrix) e1, (Matrix) e2);
+
+        throw new IllegalArgumentException();
     }
 
-    private static Integer add(Integer i1, Integer i2){
+    public static Integer add(Integer i1, Integer i2){
         return i1 + i2;
     }
 
-    private static Double add(Double d1, Double d2){
+    public static Double add(Double d1, Double d2){
         return d1 + d2;
     }
 
 
     /**
-     * performs a dot product on two matrices
+     * performs a dot product on two generic matrices
+     *
      * @param matrix1 the first matrix
      * @param matrix2 the second matrix
-     * @param <E> the type of the matrices
+     * @param <E> the type of the contents of the matrices
      * @return the resulting matrix
      */
-    public static <E> Matrix multiply(Matrix<E> matrix1, Matrix<E> matrix2) throws IllegalArgumentException{
+    public static <E> Matrix<E> multiply(Matrix<E> matrix1, Matrix<E> matrix2) throws IllegalArgumentException{
 
         if(matrix1.matrix.length < 1 || matrix2.matrix.length < 1)
             throw new IllegalArgumentException("Matrix is of size zero!");
-        if(matrix1.matrix.length != matrix2.matrix[0].length ||
-                matrix1.matrix[0].length != matrix2.matrix.length)
-            throw new IllegalArgumentException("Matrix sizes do not match!");
+        if(matrix1.matrix.length != matrix2.matrix[0].length)
+            throw new IllegalArgumentException("Matrix sizes are not compatible!");
 
-//        E[][] matrixSum = (E[][]) Array.newInstance(matrix1.cls, matrix1.matrix[0].length, matrix1.matrix[0].length);
-        E[][] matrixSum = (E[][]) new Object[matrix1.matrix[0].length][matrix1.matrix[0].length];
+        E[][] matrixSum = (E[][]) new Object[matrix2.matrix.length][matrix1.matrix[0].length];
 
-        for(int x = 0; x < matrix1.matrix.length; x++){
-            for(int y = 0; y < matrix2.matrix.length; y++){
-                E sum = null;
-                for(int v = 0; v < matrix1.matrix[0].length; v++) {
+        for(int y = 0; y < matrix1.matrix[0].length; y++){
+            for(int x = 0; x < matrix2.matrix.length; x++){
+                for(int v = 0; v < matrix1.matrix.length; v++) {
 
-                    E prod = multiply(matrix1.matrix[x][v], matrix2.matrix[v][y]);
+                    E prod = multiply(matrix1.matrix[v][y], matrix2.matrix[x][v]);
 
-                    if(sum == null){
-                        sum = prod;
+                    //sum the products
+                    if(matrixSum[x][y] == null){
+                        matrixSum[x][y] = prod;
                     }
                     else{
-                        sum = add(sum, prod);
+                        matrixSum[x][y] = add(matrixSum[x][y], prod);
                     }
                 }
-                matrixSum[x][y] = add(matrix1.matrix[x][y], matrix2.matrix[x][y]);
             }
         }
-
-//        return new Matrix(matrix1.cls, matrixSum);
         return new Matrix(matrixSum);
     }
 
 
     /**
-     * catches unimplemented types. Should never be called!
-     * @param e1
-     * @param e2
-     * @param <E>
-     * @return
+     * calls the appropriate multiply() given parameter types
+     * throws IllegalArgumentException if given unimplemented types
+     *
+     * @param e1 first value
+     * @param e2 second value
+     * @param <E> type
+     * @return result of multiplication
      */
     public static <E> E multiply(E e1, E e2){
 
-        return null;
+        String foo = e1.getClass().getName();
+        if(foo.equals("java.lang.Integer"))
+            return (E) multiply((Integer) e1, (Integer) e2);
+        if(foo.equals("java.lang.Double"))
+            return (E) multiply((Double) e1, (Double) e2);
+        if(foo.equals("Matrix"))
+            return (E) multiply((Matrix) e1, (Matrix) e2);
+
+        throw new IllegalArgumentException();
     }
 
     public static Integer multiply(Integer i1, Integer i2){
@@ -151,28 +183,41 @@ public class Matrix<E> {
     }
 
     /**
-     * performs the unary star operation
-     * this is the generic method that should never be called.
-     * @param e
-     * @param <E>
-     * @return
+     * performs the Kleene star operation
+     * throws IllegalArgumentException if given unimplemented type
+     *
+     * @param e the value to operate over
+     * @param <E> the type
+     * @return result of Kleene star
      */
     public static <E> E star(E e){
 
-        return null;
+        String foo = e.getClass().getName();
+        if(foo.equals("Matrix"))
+            return (E) star((Matrix) e);
+
+        throw new IllegalArgumentException();
     }
 
+    /**
+     * performs the kleene star operation on a square matrix
+     * matrix must be square or throws IllegalArgumentException
+     *
+     * @param matrix square matrix to be operated on
+     * @param <E> type of matrix
+     * @return resulting matrix from Kleene star
+     */
     public static <E> Matrix<E> star(Matrix<E> matrix){
 
-        if(matrix.matrix.length == 1){
-            E[][] foo = (E[][]) Array.newInstance(matrix.getClass(), 1, 1);
-            foo[0][0] = star(matrix.matrix[0][0]);
-//            return new Matrix(matrix.cls, foo);
-            return new Matrix(foo);
+        if(matrix.matrix.length == 0 || matrix.matrix.length != matrix.matrix[0].length){
+            throw new IllegalArgumentException();
         }
 
-//        E[][] newMatrix = (E[][]) Array.newInstance(matrix.cls, matrix.matrix[0].length, matrix.matrix[0].length);
-        E[][] newMatrix = (E[][]) new Object[matrix.matrix[0].length][matrix.matrix[0].length];
+        if(matrix.matrix.length == 1){
+            return matrix;
+        }
+
+        E[][] newMatrix = (E[][]) new Object[matrix.matrix.length][matrix.matrix[0].length];
 
         for(int x = 0; x < matrix.matrix.length; x++){
             for(int y = 0; y < matrix.matrix[0].length; y++){
@@ -180,53 +225,55 @@ public class Matrix<E> {
             }
         }
 
-//        return new Matrix(matrix.cls, star(newMatrix));
-        return new Matrix(star(newMatrix));
-    }
+        Matrix<E> a = new Matrix<>(matrixPopulate(matrix.matrix, 0, 0, 0, 0));
+        Matrix<E> b = new Matrix<>(matrixPopulate(matrix.matrix, 1, matrix.matrix.length - 1, 0, 0));
+        Matrix<E> c = new Matrix<>(matrixPopulate(matrix.matrix, 0, 0, 1, matrix.matrix.length - 1));
+        Matrix<E> d = new Matrix<>(matrixPopulate(matrix.matrix, 1, matrix.matrix.length - 1, 1, matrix.matrix.length - 1));
 
+        Matrix<E> sendNewAs = star(add(a, multiply(multiply(b, star(d)), c)));
+        Matrix<E> sendNewBs = multiply(star(add(a, multiply(b, multiply(star(d), c)))), multiply(b, star(d)));
+        Matrix<E> sendNewCs = multiply(multiply(star(add(d, multiply(multiply(c, star(a)), b))), c), star(a));
+        Matrix<E> sendNewDs = star(add(d, multiply(c, multiply(star(a), b))));
 
-    public static <E> E[][] star(E[][] matrix){
+        newMatrix[0][0] = sendNewAs.matrix[0][0];
+        for(int x = 0; x < newMatrix.length; x++){
+            for(int y = 0; y < newMatrix[0].length; y++) {
 
-
-
-        E[][] newMatrix = (E[][]) Array.newInstance(matrix.getClass(), matrix[0].length, matrix[0].length);
-
-//        E[][] a = (E[][]) Array.newInstance(matrix.getClass(), 1, 1);
-//        E[][] b = (E[][]) Array.newInstance(matrix.getClass(), matrix.length - 1, 1);
-//        E[][] c = (E[][]) Array.newInstance(matrix.getClass(), 1, matrix[0].length - 1);
-//        E[][] d = (E[][]) Array.newInstance(matrix.getClass(), matrix.length - 1, matrix[0].length - 1);
-
-        E[][] a = matrixPopulate(matrix, 0, 0, 0, 0);
-        E[][] b = matrixPopulate(matrix, 1, matrix.length - 1, 0, 0);
-        E[][] c = matrixPopulate(matrix, 0, 0, 1, matrix.length - 1);
-        E[][] d = matrixPopulate(matrix, 1, matrix.length - 1, 1, matrix.length - 1);
-
-        E[][] sendNewAs = star(add(a, multiply(multiply(b, star(d)), c)));
-        E[][] sendNewBs = multiply(add(a, multiply(b, multiply(star(d), c))), multiply(b, star(d)));
-        E[][] sendNewCs = multiply( multiply(add(d, multiply(multiply(c, star(a)), b)), c), star(a));
-        E[][] sendNewDs = star(add(d, multiply(c, multiply(star(a), b))));
-
-        newMatrix[0][0] = a[0][0];
-        for(int i = 1; i < newMatrix.length - 1; i++){
-            newMatrix[i][0] = b[i][0];
-            newMatrix[0][i] = c[0][i];
-            newMatrix[i][i] = d[i][i];
-        }
-
-        return newMatrix;
-    }
-
-    private static <E> E[][] matrixPopulate(E[][] matrix, int xStart, int xEnd, int yStart, int yEnd){
-
-        E[][] foo = (E[][]) Array.newInstance(matrix.getClass(), xEnd - xEnd + 1, yEnd - yStart + 1);
-
-        for(int x = xStart; x < xEnd; x++){
-            for(int y = yStart; y < yEnd; y++){
-
-                foo[x][y] = matrix[x][y];
+                if(x == 0 && y > 0){
+                    newMatrix[0][y] = sendNewCs.matrix[0][y - 1];
+                }
+                if(y == 0 && x > 0){
+                    newMatrix[x][0] = sendNewBs.matrix[x - 1][0];
+                }
+                if(x > 0 && y > 0){
+                    newMatrix[x][y] = sendNewDs.matrix[x - 1][y - 1];
+                }
             }
         }
+        return new Matrix<>(newMatrix);
+    }
 
+    /**
+     * populates a sub matrix for the kleene star operation
+     *
+     * @param matrix original matrix
+     * @param xStart x starting bounds
+     * @param xEnd x ending bounds
+     * @param yStart y starting bounds
+     * @param yEnd y ending bounds
+     * @param <E> type of matrix
+     * @return the resulting sub matrix
+     */
+    private static <E> E[][] matrixPopulate(E[][] matrix, int xStart, int xEnd, int yStart, int yEnd){
+
+        E[][] foo = (E[][]) new Object[xEnd - xStart + 1][yEnd - yStart + 1];
+
+        for(int x = 0; x < xEnd - xStart + 1; x++){
+            for(int y = 0; y < yEnd - yStart + 1; y++){
+
+                foo[x][y] = matrix[x + xStart][y + yStart];
+            }
+        }
         return foo;
     }
 }
